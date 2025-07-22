@@ -22,13 +22,24 @@ tone_levels = {
     "slightly nervous": -2,
     "very nervous": -3,
     "emotionally flat": -4,
-    "dull": -4.5
+    "dull": -4.5,
+    "silent": -6
 }
 
 def visualize_tone_progression(segments, save_path=None):
     times = []
     levels = []
     labels = []
+
+    # Fill in silent gaps
+    filled_segments = []
+    last_end = 0
+    for seg in segments:
+        if seg["start"] > last_end:
+            filled_segments.append({"start": last_end, "end": seg["start"], "tone": "silent"})
+        filled_segments.append(seg)
+        last_end = seg["end"]
+    segments = filled_segments
 
     for seg in segments:
         start = seg["start"]
@@ -38,7 +49,8 @@ def visualize_tone_progression(segments, save_path=None):
 
         times.extend([start, end])
         levels.extend([tone_level, tone_level])
-        labels.append(((start + end)/2, tone))
+        if tone != "silent":
+            labels.append(((start + end)/2, tone))
 
     plt.figure(figsize=(14, 6))
     plt.plot(times, levels, drawstyle='steps-post', linewidth=2, color='darkorange')
@@ -72,7 +84,7 @@ def visualize_smoothed_tone(segments, resolution=0.1, smoothing_sigma=3, save_pa
         if overlapping:
             tone_series.append(np.mean(overlapping))
         else:
-            tone_series.append(0)
+            tone_series.append(tone_levels["silent"])
 
     tone_series = np.array(tone_series)
     smoothed = gaussian_filter1d(tone_series, sigma=smoothing_sigma)
@@ -121,7 +133,7 @@ def convert_srt_to_segments(srt_path):
     return segments
 
 
-def generate_tone_table(segments, srt_path, output_md="tone_table.md"):
+def generate_tone_table(srt_path, output_md="tone_table.md"):
     print("\nGenerated Tone Table:")
     md_lines = ["| Start-End (s) | Transcript | Tone |", "|--------------|------------|------|"]
 

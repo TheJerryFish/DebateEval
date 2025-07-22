@@ -10,6 +10,7 @@ def generate_transcript(file_path, model_size="medium", output_format="srt"):
 
     print(f"Transcribing {file_path}...")
     result = model.transcribe(file_path, verbose=True)
+    full_transcript = result.get("text", "").strip()
 
     # Save with timestamps (srt or vtt)
     segments = result["segments"]
@@ -22,6 +23,7 @@ def generate_transcript(file_path, model_size="medium", output_format="srt"):
                 text = segment["text"].strip()
                 f.write(f"{start} --> {end}\n{text}\n\n")
         print(f"SRT saved to: {srt_file}")
+    return full_transcript
 
 def format_timestamp(seconds: float) -> str:
     hours = int(seconds // 3600)
@@ -37,4 +39,6 @@ if __name__ == "__main__":
     parser.add_argument("--format", default="srt", help="Output format: srt | vtt")
     args = parser.parse_args()
 
-    generate_transcript(args.file, model_size=args.model, output_format=args.format)
+    transcript = generate_transcript(args.file, model_size=args.model, output_format=args.format)
+    print("\nTranscript:")
+    print(transcript)

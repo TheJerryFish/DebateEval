@@ -155,10 +155,14 @@ def mixed_tone(e1, e2, c1, c2):
 
     return "uncertain"
 
-def segment_emotions(audio_path, srt_path=None):
+def segment_emotions(audio_path, srt_path=None, output_json=None):
     waveform = load_audio(audio_path).squeeze()
     intervals = read_srt_intervals(srt_path) if srt_path else None
     segments = predict_emotion_segments(waveform, intervals=intervals)
+
+    if output_json:
+        with open(output_json, "w", encoding="utf-8") as f:
+            json.dump(segments, f, indent=2, ensure_ascii=False)
 
     if srt_path:
         with open(srt_path, "r", encoding="utf-8") as f:
