@@ -14,7 +14,7 @@ const ResultPanel = ({ result }) => {
       <img src={`http://localhost:5000${result.smoothed_plot}`} alt="Smoothed Plot" width="100%" />
 
       <h2>Tone Table</h2>
-      <pre>{result.table}</pre>
+      <pre>{result.table_data}</pre>
     </div>
   );
 };
