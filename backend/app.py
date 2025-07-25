@@ -29,7 +29,9 @@ def analyze():
             "table_data": result.get("table", []),
             "tone_plot": f"/static/output/{result.get('tone_plot', 'plot.png')}",
             "smoothed_plot": f"/static/output/{result.get('smoothed_plot', 'smoothed_plot.png')}",
-            "metrics": result.get("metrics", {})
+            "metrics": result.get("metrics", {}),
+            "feedback": result.get("feedback", ""),
+            "transcript_feedback": result.get("transcript_feedback", "")
         })
 
     return jsonify({"error": "Invalid file type"}), 400

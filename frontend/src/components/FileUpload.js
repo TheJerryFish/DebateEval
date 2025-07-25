@@ -1,4 +1,3 @@
-// frontend/src/components/FileUpload.js
 import React, { useState } from "react";
 
 const FileUpload = ({ onAnalyze }) => {
@@ -10,10 +9,16 @@ const FileUpload = ({ onAnalyze }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input type="file" accept=".mp3" onChange={(e) => setFile(e.target.files[0])} />
-      <button type="submit">Analyze</button>
-    </form>
+    <div className="upload-section">
+      <input
+        type="file"
+        accept=".mp3"
+        onChange={(e) => setFile(e.target.files[0])}
+      />
+      <button type="submit" onClick={handleSubmit}>
+        Analyze
+      </button>
+    </div>
   );
 };
 

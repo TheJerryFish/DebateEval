@@ -30,7 +30,16 @@ function App() {
     <div className="App">
       <h1>DebateEval App</h1>
       <FileUpload onAnalyze={handleAnalyze} />
-      {loading && <p>Analyzing audio...</p>}
+      {loading && (
+        <div className="loading-msg">
+          <span>Analyzing audio</span>
+          <span className="dots">
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+          </span>
+        </div>
+      )}
       {result && <ResultPanel result={result} />}
     </div>
   );

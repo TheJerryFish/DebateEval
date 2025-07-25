@@ -4,6 +4,7 @@ import json
 from generate_transcript import generate_transcript as transcribe
 from segment_emotions import segment_emotions
 from visualize_tone import visualize_tone_progression, visualize_smoothed_tone, generate_tone_table
+from generate_feedback import get_feedback_from_ollama, get_transcript_feedback_from_ollama
 
 def process_mp3_file(audio_file, output_dir="backend/static/output"):
     os.makedirs(output_dir, exist_ok=True)
@@ -30,7 +31,12 @@ def process_mp3_file(audio_file, output_dir="backend/static/output"):
     print("Generating tone table...")
     generate_tone_table(srt_file, output_md=tone_table_path)
     with open(tone_table_path, 'r', encoding='utf-8') as f:
-        tone_table_md = f.read()
+        raw_table = f.read()
+        parsed_table = parse_tone_table(raw_table)
+        print("Generating feedback with LLM...")
+        feedback = get_feedback_from_ollama(parsed_table)
+        print("Generating transcript-level feedback with LLM...")
+        transcript_feedback = get_transcript_feedback_from_ollama(transcript_text)
 
     # Optional: Extract basic metrics
     num_segments = len(segments)
@@ -39,14 +45,29 @@ def process_mp3_file(audio_file, output_dir="backend/static/output"):
 
     return {
         "transcript": transcript_text,
-        "table": tone_table_md,
+        "table": parsed_table,
         "tone_plot": "plot.png",
         "smoothed_plot": "smoothed_plot.png",
         "metrics": {
             "segments": num_segments,
             "dominant_tone": dominant_tone,
-        }
+        },
+        "feedback": feedback,
+        "transcript_feedback": transcript_feedback
     }
+    
+def parse_tone_table(md_text):
+    lines = [line.strip() for line in md_text.splitlines() if "|" in line and not line.startswith("|---")]
+    data = []
+    for line in lines[1:]:  # Skip header
+        cells = [cell.strip() for cell in line.split("|")[1:-1]]  # Strip leading/trailing |
+        if len(cells) == 3:
+            data.append({
+                "start_end": cells[0],
+                "transcript": cells[1],
+                "tone": cells[2]
+            })
+    return data
 
 def main():
     if len(sys.argv) < 2:
