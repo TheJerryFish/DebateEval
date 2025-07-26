@@ -74,7 +74,6 @@ def main():
         print("Usage: python main.py <audio_file.mp3>")
         return
     audio_file = sys.argv[1]
-    os.makedirs("static/uploads/", exist_ok=True)
     process_mp3_file(audio_file)
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # 🎙️ DebateEval
 
-**DebateEval** is an AI-powered web application that evaluates debate audio files for tone progression, emotional segments, and overall communication quality. It uses cutting-edge speech transcription and LLM-driven feedback — all locally hosted and fully customizable.
+**DebateEval** is an AI-powered web app that evaluates audio files for tone progression, emotional segments, and overall communication quality.
 
 ---
 
@@ -11,7 +11,7 @@
 - 🎭 Detects emotional tone over time (wav2vec2-based)
 - 📊 Visualizes tone progression + smoothed emotion trends
 - 📋 Generates a tone-marked table of speech segments
-- 🧠 Uses a local LLM (e.g., Mistral via Ollama) to:
+- 🧠 Uses a local LLM to:
   - Analyze tone shifts and give feedback
   - Analyze content/speech delivery quality
 
@@ -20,7 +20,7 @@
 
 ## 🧩 Tech Stack
 
-- **Frontend:** React (Vite or CRA)
+- **Frontend:** React
 - **Backend:** Flask
 - **Transcription:** OpenAI Whisper
 - **Emotion Detection:** `superb/wav2vec2-base-superb-er`
@@ -37,7 +37,25 @@
 - [Ollama](https://ollama.com) installed
 - FFmpeg installed
 
-### 1. Clone the repo
+### Instructions
 ```bash
 git clone https://github.com/yourusername/DebateEval.git
 cd DebateEval
+```
+We would need two terminals here,
+Terminal 1:
+```bash
+npm run start
+```
+Terminal 2:
+```bash
+cd backend
+ollama run mistral
+python app.py
+```
+
+### Next Steps
+1. Host on web using vercel
+2. Fly.io for backend and connect to local ollama to avoid user-end download
+3. Improve UI
+4. Allow mass mp3 uploads

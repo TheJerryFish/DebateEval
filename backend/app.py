@@ -6,8 +6,8 @@ from main import process_mp3_file  # your analysis pipeline
 app = Flask(__name__)
 CORS(app)  # enable cross-origin access from React frontend
 
-UPLOAD_FOLDER = 'backend/static/uploads'
-OUTPUT_FOLDER = 'backend/static/output'
+UPLOAD_FOLDER = 'static/uploads'
+OUTPUT_FOLDER = 'static/output'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
