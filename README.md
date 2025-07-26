@@ -38,19 +38,30 @@
 - FFmpeg installed
 
 ### Instructions
+If using conda:
 ```bash
-git clone https://github.com/yourusername/DebateEval.git
+conda create -n debateEval python=3.10 -y
+conda activate debateEval
+```
+
+Clone the repo
+```bash
+git clone https://github.com/TheJerryFish/DebateEval.git
 cd DebateEval
 ```
 We would need two terminals here,
-Terminal 1:
+Terminal 1 (for frontend):
 ```bash
+cd frontend/src
+npm install
 npm run start
 ```
-Terminal 2:
+Terminal 2 (for backend):
 ```bash
 cd backend
+pip install -r requirements.txt
 ollama run mistral
+/bye
 python app.py
 ```
 
