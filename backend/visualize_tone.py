@@ -89,16 +89,12 @@ def visualize_tone_progression(srt_path, save_path=None):
         for seg in segs:
             start, end, tone = seg["start"], seg["end"], seg["tone"]
             tone_level = tone_levels.get(tone, 0)
-            times.extend([start, end])
-            levels.extend([tone_level, tone_level])
+            
+            # Add horizontal line segment
+            times.extend([start, end, np.nan])
+            levels.extend([tone_level, tone_level, np.nan])
 
-            # Annotate
-            if tone != "silent":
-                plt.text((start+end)/2, tone_level+0.2, tone,
-                         rotation=45, fontsize=8, ha='center',
-                         color=speaker_colors[speaker])
 
-        # Continuous line for each speaker
         plt.plot(times, levels, color=speaker_colors[speaker], linewidth=2, label=speaker)
 
     plt.yticks(list(tone_levels.values()), list(tone_levels.keys()))
