@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 import json
 import matplotlib
 matplotlib.use('Agg') 
@@ -26,49 +25,93 @@ tone_levels = {
     "silent": -6
 }
 
-def visualize_tone_progression(segments, save_path=None):
-    times = []
-    levels = []
-    labels = []
+def visualize_tone_progression(srt_path, save_path=None):
+    # Parse the .srt file to build segments with speaker and tone
+    segments = []
+    with open(srt_path, 'r', encoding='utf-8') as f:
+        lines = [line.strip() for line in f if line.strip()]
 
-    # Fill in silent gaps
-    filled_segments = []
-    last_end = 0
-    for seg in segments:
-        if seg["start"] > last_end:
-            filled_segments.append({"start": last_end, "end": seg["start"], "tone": "silent"})
-        filled_segments.append(seg)
-        last_end = seg["end"]
-    segments = filled_segments
+    i = 0
+    while i + 1 < len(lines):
+        line = lines[i]
+        next_line = lines[i+1]
 
-    for seg in segments:
-        start = seg["start"]
-        end = seg["end"]
-        tone = seg["tone"]
-        tone_level = tone_levels.get(tone, 0)
+        # Identify which line is time and which is text
+        if "-->" in line:
+            # Time first, then text
+            time_line = line
+            text_line = next_line
+            i += 2
+        else:
+            # Text first, then time
+            text_line = line
+            time_line = next_line
+            i += 2
 
-        times.extend([start, end])
-        levels.extend([tone_level, tone_level])
-        if tone != "silent":
-            labels.append(((start + end)/2, tone))
+        # Parse start/end time
+        match = re.match(r"(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})", time_line)
+        if not match:
+            continue
 
+        def parse_time(t):
+            return sum(float(x) * 60 ** i for i, x in enumerate(reversed(t.replace(',', '.').split(':'))))
+
+        start = parse_time(match.group(1))
+        end = parse_time(match.group(2))
+
+        # Parse speaker
+        speaker_match = re.match(r"^\[(.*?)\]:", text_line)
+        speaker = speaker_match.group(1).strip() if speaker_match else "Unknown"
+
+        # Parse tone (last [...] in line)
+        tone_matches = re.findall(r"\[(.*?)\]", text_line)
+        tone = tone_matches[-1].strip() if tone_matches else "N/A"
+
+        segments.append({
+            "start": start,
+            "end": end,
+            "speaker": speaker,
+            "tone": tone
+        })
+
+    # ==== Visualization ====
     plt.figure(figsize=(14, 6))
-    plt.plot(times, levels, drawstyle='steps-post', linewidth=2, color='darkorange')
+    fixed_colors = ["red", "blue"]
+    speakers = list({seg["speaker"] for seg in segments})
+    speaker_colors = {speaker: fixed_colors[i % len(fixed_colors)] for i, speaker in enumerate(speakers)}
 
-    for x, tone in labels:
-        plt.text(x, tone_levels.get(tone, 0) + 0.2, tone, rotation=45, fontsize=8, ha='center')
+    for speaker in speakers:
+        segs = [seg for seg in segments if seg["speaker"] == speaker]
+        print(segs)
+        segs.sort(key=lambda x: x["start"])
+        times, levels = [], []
+
+        for seg in segs:
+            start, end, tone = seg["start"], seg["end"], seg["tone"]
+            tone_level = tone_levels.get(tone, 0)
+            times.extend([start, end])
+            levels.extend([tone_level, tone_level])
+
+            # Annotate
+            if tone != "silent":
+                plt.text((start+end)/2, tone_level+0.2, tone,
+                         rotation=45, fontsize=8, ha='center',
+                         color=speaker_colors[speaker])
+
+        # Continuous line for each speaker
+        plt.plot(times, levels, color=speaker_colors[speaker], linewidth=2, label=speaker)
 
     plt.yticks(list(tone_levels.values()), list(tone_levels.keys()))
     plt.xlabel("Time (s)")
     plt.ylabel("Tone Level")
-    plt.title("Tone Progression Over Time")
+    plt.title("Tone Progression Over Time by Speaker")
     plt.grid(True)
+    plt.legend(title="Speakers")
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path)
     else:
         plt.show()
-
 
 def visualize_smoothed_tone(segments, resolution=0.1, smoothing_sigma=3, save_path=None):
     max_time = max(seg["end"] for seg in segments)
@@ -135,7 +178,7 @@ def convert_srt_to_segments(srt_path):
 
 def generate_tone_table(srt_path, output_md="tone_table.md"):
     print("\nGenerated Tone Table:")
-    md_lines = ["| Start-End (s) | Transcript | Tone |", "|--------------|------------|------|"]
+    md_lines = ["| Speaker | Start-End (s) | Transcript | Tone |", "|---------|----------------|------------|------|"]
 
     with open(srt_path, 'r', encoding='utf-8') as f:
         lines = [line.strip() for line in f if line.strip()]
@@ -147,12 +190,22 @@ def generate_tone_table(srt_path, output_md="tone_table.md"):
             if match:
                 start = sum(float(x) * 60 ** j for j, x in enumerate(reversed(match.group(1).replace(',', '.').split(':'))))
                 end = sum(float(x) * 60 ** j for j, x in enumerate(reversed(match.group(2).replace(',', '.').split(':'))))
-                text = re.sub(r"\[.*?\]", "", text_line).strip()
-                tone_match = re.search(r"\[(.*?)\]", text_line)
-                tone = tone_match.group(1).strip() if tone_match else "N/A"
-                line = f"{start:.1f} - {end:.1f} | {text} | {tone}"
+
+                # Match format: [SPEAKER_01]: transcript [tone]
+                speaker_match = re.match(r"^\[(.*?)\]:", text_line)
+                speaker = speaker_match.group(1).strip() if speaker_match else "Unknown"
+
+                # Extract tone from square brackets at end of sentence
+                tone_matches = re.findall(r"\[(.*?)\]", text_line)
+                tone = tone_matches[-1].strip() if tone_matches else "N/A"
+
+                # Remove speaker prefix and tone annotation from text
+                text = re.sub(r"^\[.*?\]:", "", text_line)         # remove [SPEAKER_X]:
+                text = re.sub(r"\[.*?\]\s*$", "", text).strip()    # remove [tone] at end
+
+                line = f"{speaker} | {start:.1f} - {end:.1f} | {text} | {tone}"
                 print(line)
-                md_lines.append(f"| {start:.1f} - {end:.1f} | {text} | {tone} |")
+                md_lines.append(f"| {speaker} | {start:.1f} - {end:.1f} | {text} | {tone} |")
             i += 2
 
     with open(output_md, 'w', encoding='utf-8') as out:

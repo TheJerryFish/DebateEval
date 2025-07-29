@@ -23,9 +23,8 @@ def process_mp3_file(audio_file, output_dir="backend/static/output"):
     segments = segment_emotions(audio_file, srt_file)
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(segments, f, indent=2, ensure_ascii=False)
-
     print("Visualizing tone...")
-    visualize_tone_progression(segments, save_path=plot_path)
+    visualize_tone_progression(srt_file, save_path=plot_path)
     visualize_smoothed_tone(segments, resolution=0.1, smoothing_sigma=3, save_path=smoothed_plot_path)
 
     print("Generating tone table...")
@@ -60,12 +59,13 @@ def parse_tone_table(md_text):
     lines = [line.strip() for line in md_text.splitlines() if "|" in line and not line.startswith("|---")]
     data = []
     for line in lines[1:]:  # Skip header
-        cells = [cell.strip() for cell in line.split("|")[1:-1]]  # Strip leading/trailing |
-        if len(cells) == 3:
+        cells = [cell.strip() for cell in line.split("|")[1:-1]]  # Remove outer |
+        if len(cells) == 4:
             data.append({
-                "start_end": cells[0],
-                "transcript": cells[1],
-                "tone": cells[2]
+                "speaker": cells[0],
+                "start_end": cells[1],
+                "transcript": cells[2],
+                "tone": cells[3]
             })
     return data
 

@@ -19,6 +19,7 @@ function App() {
       });
       const data = await res.json();
       setResult(data);
+
     } catch (err) {
       console.error("Analysis failed", err);
     } finally {

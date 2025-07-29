@@ -32,6 +32,7 @@ const ResultPanel = ({ result }) => {
           <table>
             <thead>
               <tr>
+                <th>Speaker</th>
                 <th>Start-End (s)</th>
                 <th>Transcript</th>
                 <th>Tone</th>
@@ -40,6 +41,7 @@ const ResultPanel = ({ result }) => {
             <tbody>
               {result.table_data.map((row, idx) => (
                 <tr key={idx}>
+                  <td>{row.speaker}</td>
                   <td>{row.start_end}</td>
                   <td>{row.transcript}</td>
                   <td>{row.tone}</td>
