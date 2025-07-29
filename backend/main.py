@@ -35,7 +35,7 @@ def process_mp3_file(audio_file, output_dir="backend/static/output"):
         print("Generating feedback with LLM...")
         feedback = get_feedback_from_ollama(parsed_table)
         print("Generating transcript-level feedback with LLM...")
-        transcript_feedback = get_transcript_feedback_from_ollama(transcript_text)
+        transcript_feedback = get_transcript_feedback_from_ollama(parsed_table)
 
     # Optional: Extract basic metrics
     num_segments = len(segments)

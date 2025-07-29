@@ -82,7 +82,6 @@ def visualize_tone_progression(srt_path, save_path=None):
 
     for speaker in speakers:
         segs = [seg for seg in segments if seg["speaker"] == speaker]
-        print(segs)
         segs.sort(key=lambda x: x["start"])
         times, levels = [], []
 
@@ -158,17 +157,13 @@ def convert_srt_to_segments(srt_path):
             if match:
                 start = parse_time(match.group(1))
                 end = parse_time(match.group(2))
-                print(f"Parsed times: {start} -> {end}")
-                print("Text content:", text_line)
                 tone_match = re.search(r"\[(.*?)\]", text_line)
                 if tone_match:
                     tone = tone_match.group(1).strip()
-                    print("Detected tone:", tone)
                     segments.append({"start": start, "end": end, "tone": tone})
             else:
                 print("Skipping unrecognized time format:", time_line)
             i += 2
-    print("Total segments parsed:", len(segments))
     return segments
 
 
@@ -199,8 +194,6 @@ def generate_tone_table(srt_path, output_md="tone_table.md"):
                 text = re.sub(r"^\[.*?\]:", "", text_line)         # remove [SPEAKER_X]:
                 text = re.sub(r"\[.*?\]\s*$", "", text).strip()    # remove [tone] at end
 
-                line = f"{speaker} | {start:.1f} - {end:.1f} | {text} | {tone}"
-                print(line)
                 md_lines.append(f"| {speaker} | {start:.1f} - {end:.1f} | {text} | {tone} |")
             i += 2
 
@@ -218,8 +211,6 @@ if __name__ == "__main__":
     else:
         with open(args.file) as f:
             segments = json.load(f)
-
-    print("Segments loaded:", segments)
     visualize_tone_progression(segments)
     visualize_smoothed_tone(segments, resolution=0.1, smoothing_sigma=3)
     if args.file.endswith(".srt"):
