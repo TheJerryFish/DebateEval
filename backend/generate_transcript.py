@@ -2,6 +2,19 @@ import whisper
 import os
 import argparse
 from pyannote.audio import Pipeline
+import warnings
+warnings.filterwarnings(
+    "ignore", 
+    message=".*MPEG_LAYER_III subtype is unknown to TorchAudio.*"
+)
+warnings.filterwarnings(
+    "ignore", 
+    message=".*speechbrain.pretrained.*deprecated.*"
+)
+warnings.filterwarnings(
+    "ignore",
+    message=".*std.*degrees of freedom is <= 0.*"
+)
 
 def generate_transcript(file_path, model_size="medium", output_format="srt", hf_token=None):
     assert os.path.isfile(file_path), f"File not found: {file_path}"
@@ -24,7 +37,6 @@ def generate_transcript(file_path, model_size="medium", output_format="srt", hf_
                 end = segment["end"]
                 text = segment["text"].strip()
                 speaker = find_speaker_for_segment(start, end, speaker_segments)
-                print(f"{format_timestamp(start)} --> {format_timestamp(end)}: {speaker}")
 
                 f.write(f"{format_timestamp(start)} --> {format_timestamp(end)}\n")
                 f.write(f"[{speaker}]: {text}\n\n")
@@ -42,8 +54,6 @@ def diarize_speakers(file_path, hf_token):
             "speaker": speaker
         })
 
-    for seg in speaker_segments:
-        print(f"Speaker {seg['speaker']} from {seg['start']:.2f}s to {seg['end']:.2f}s")
 
     return speaker_segments
 

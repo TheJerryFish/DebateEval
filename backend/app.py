@@ -1,15 +1,20 @@
-from flask import Flask, request, jsonify, send_from_directory
+# app.py
+from flask import Flask, request, jsonify, Response, send_from_directory
 from flask_cors import CORS
 import os
-from main import process_mp3_file  # your analysis pipeline
+import sys
+import json
+import time
+from main import process_mp3_file
 
 app = Flask(__name__)
-CORS(app)  # enable cross-origin access from React frontend
+CORS(app)
 
 UPLOAD_FOLDER = 'static/uploads'
 OUTPUT_FOLDER = 'static/output'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -17,28 +22,30 @@ def analyze():
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
-    if file.filename.endswith(".mp3"):
-        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(filepath)
+    if not file.filename.endswith(".mp3"):
+        return jsonify({"error": "Invalid file type"}), 400
 
-        # This should return a dictionary with transcript, plot filenames, table data, etc.
-        result = process_mp3_file(filepath, output_dir=OUTPUT_FOLDER)
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filepath)
 
-        return jsonify({
-            "transcript": result.get("transcript", ""),
-            "table_data": result.get("table", []),
-            "tone_plot": f"/static/output/{result.get('tone_plot', 'plot.png')}",
-            "smoothed_plot": f"/static/output/{result.get('smoothed_plot', 'smoothed_plot.png')}",
-            "metrics": result.get("metrics", {}),
-            "feedback": result.get("feedback", ""),
-            "transcript_feedback": result.get("transcript_feedback", "")
-        })
+    def generate():
+        # Stream progress messages
+        yield "data: Starting analysis...\n\n"
+        result = {}
+        for msg, partial_result in process_mp3_file(filepath, OUTPUT_FOLDER, stream=True):
+            # Send progress message
+            yield f"data: {msg}\n\n"
+            result.update(partial_result or {})
+        # Finally send the full result as JSON
+        yield f"data: DONE::{json.dumps(result)}\n\n"
 
-    return jsonify({"error": "Invalid file type"}), 400
+    return Response(generate(), mimetype="text/event-stream")
+
 
 @app.route("/static/output/<path:filename>")
 def serve_output(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
 
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
